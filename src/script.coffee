@@ -58,11 +58,10 @@ pixelData = (x, y, unit) ->
 createElement = (x, y) ->
   unit    = "px"
   pixel   = pixelData x, y, unit
-
   # early out transparent pixels -- no need to create superfluous DOM elements
   return if pixel.color is "transparent"
 
-  div = document.createElement "div"
+  div     = document.createElement "div"
   div.setAttribute "id", "px#{x}-#{y}"
   div.setAttribute "class", "pixel #{pixel.color}"
   div.setAttribute "style", trimAll "
@@ -74,4 +73,17 @@ createElement = (x, y) ->
 
 pixels = ( createElement x, y for value, x in row for row, y in pxMap )
 
-console.log pixels
+resizePixels = (x, y, pixels) ->
+  unit = "px"
+  pixel = pixelData x, y, unit
+  current = pixels[y][x]
+  if current
+    current.setAttribute "style", trimAll "
+      height: #{ Math.round pixel.height }#{unit};
+      width:  #{ Math.round pixel.width }#{unit};
+      left:   #{ Math.round pixel.x }#{unit};
+      top:    #{ Math.round pixel.y }#{unit};"
+  true
+
+window.addEventListener 'resize', (event) =>
+  ( resizePixels x, y, pixels for value, x in row for row, y in pxMap )
