@@ -1,73 +1,76 @@
 colorEnum =
-    'r': 'red'
-    'b': 'black'
+  'r': 'red'
+  'b': 'black'
 
 pxMap = [
-   #0....½....1....½....2....½....3
-    "             b     "
-    "   bb bb bb bbb bb "
-    " r bb b  bb  b  bb "
-    "   b               "
-
-    # "bbbbbbbbbbbbbbbbbbbbbbbbb"
-    # "                 b       "
-    # "     bbb bb bbb bbb bbb  "
-    # "  r  b b b  b b  b  b b  "
-    # "     bbb b  bbb  b  bbb  "
-    # "     b                   "
-    # "bbbbbbbbbbbbbbbbbbbbbbbbb"
+ #0....½....1....½....2....½....3
+  "bbbbbbbbbbbbbbbbbbbb"
+  "             b      "
+  "   bb bb bb bbb bb  "
+  " r bb b  bb  b  bb  "
+  "   b                "
+  "bbbbbbbbbbbbbbbbbbbb"
 ]
 
-elementDimensions = (element = document.documentElement) ->
-    width  = element.clientWidth
-    height = element.clientHeight
+pixelColor = (x, y) ->
+  if pxMap[y][x] isnt " "
+    colorEnum[ pxMap[y][x] ]
+  else
+    "transparent"
 
-    { width, height }
+elementDimensions = (element = document.documentElement) ->
+  width   = element.clientWidth
+  height  = element.clientHeight
+  { width, height }
 
 pxMapDimensions = () ->
-    width  = pxMap.length
-    height = pxMap[0].length
+  width   = pxMap[0].length
+  height  = pxMap.length
+  { width, height }
 
-    { width, height }
+# Based on http://stackoverflow.com/questions/7764319/how-to-remove-duplicate-white-spaces-in-a-string
+trimAll   = (str) ->
+  str.trim().replace /(\s)\s*/g, '$1'
 
-pixelColor = (x, y) ->
-    return pxMap[y][x] is " " ? "transparent" :
+# Assumes pixels are square and that the final image width == document width
+pixelData = (x, y, unit) ->
 
-    if pxMap[y][x] is " "
-        return "transparent"
-    else
-        return colorEnum[ pxMap[y][x] ]
+  # Determine constraints
+  docSize = elementDimensions document.documentElement
+  mapSize = pxMapDimensions()
 
-# Assumes pixel are square and that the final image as wide as the document
-pixelData = (x, y) ->
-    # Determine constraints
-    docSize = elementDimensions document.documentElement
-    mapSize = pxMapDimensions()
+  # Define pixel attributes
+  color   = pixelColor x, y
 
-    width   = docSize.width / mapSize.width
-    height  = width
-    color   = pixelColor x, y
-    x       = Math.floor(x * width)
-    y       = Math.floor(y * height)
 
-    { x, y, height, width, color }
+  if unit is "px"
+    width   = docSize.width / mapSize.width # pixel
+  else if unit is "%" or "percent"
+    width   = 1 / mapSize.width * 100 # percent
+  else
+    return null
+
+  height  = width
+  x       = x * width
+  y       = y * height
+  { x, y, height, width, color }
 
 createElement = (x, y) ->
-    pixel = pixelData x, y
+  unit    = "px"
+  pixel   = pixelData x, y, unit
 
-    # don't generate divs for transparent pixels
-    if pixel.color is "transparent"
-        return
+  # early out transparent pixels -- no need to create superfluous DOM elements
+  return if pixel.color is "transparent"
 
-    div = document.createElement "div"
-    div.setAttribute "id", "px#{x}-#{y}"
-    div.setAttribute "class", "pixel #{pixel.color}"
-    div.setAttribute "style", "
-        height: #{ pixel.height };
-        width:  #{ pixel.width };
-        left:   #{ pixel.x };
-        top:    #{ pixel.y };"
-    document.body.appendChild div
+  div = document.createElement "div"
+  div.setAttribute "id", "px#{x}-#{y}"
+  div.setAttribute "class", "pixel #{pixel.color}"
+  div.setAttribute "style", trimAll "
+    height: #{ Math.round pixel.height }#{unit};
+    width:  #{ Math.round pixel.width }#{unit};
+    left:   #{ Math.round pixel.x }#{unit};
+    top:    #{ Math.round pixel.y }#{unit};"
+  document.body.appendChild div
 
 pixels = ( createElement x, y for value, x in row for row, y in pxMap )
 

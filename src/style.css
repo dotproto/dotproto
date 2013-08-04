@@ -1,0 +1,4 @@
+.pixel { position: absolute; outline: 1px solid; }
+
+.black { background-color: black; outline-color: black; }
+.red   { background-color: red; outline-color: red; }
